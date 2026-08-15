@@ -1,24 +1,19 @@
 package com.chatai.app.ui.components
 
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
+import com.chatai.app.data.remote.AiModels
 import com.chatai.app.domain.model.ChatMessage
 import com.chatai.app.ui.theme.ChatColors
 
@@ -28,76 +23,8 @@ fun MessageBubble(
     modifier: Modifier = Modifier
 ) {
     when (message.role) {
-        "image" -> ImageMessage(message, modifier)
         "user" -> UserMessage(message, modifier)
-        "assistant" -> AssistantMessage(message, modifier)
         else -> AssistantMessage(message, modifier)
-    }
-}
-
-@Composable
-private fun ImageMessage(message: ChatMessage, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .animateContentSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.padding(bottom = 8.dp)
-        ) {
-            Surface(
-                modifier = Modifier.size(28.dp),
-                shape = CircleShape,
-                color = ChatColors.AssistantAvatarBg
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        imageVector = Icons.Default.Image,
-                        contentDescription = null,
-                        tint = androidx.compose.ui.graphics.Color.White,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
-            }
-            Text(
-                text = "ChatAI",
-                color = ChatColors.TextPrimary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
-        }
-
-        when {
-            message.imageStatus == "generating" -> {
-                ImageGeneratingPlaceholder(prompt = message.content)
-            }
-            message.imageUrl != null -> {
-                GeneratedImageCard(
-                    imageUrl = message.imageUrl,
-                    prompt = message.content,
-                    modifier = Modifier.fillMaxWidth(0.85f),
-                    onSaveImage = null // Save button is on the card itself
-                )
-            }
-            message.imageStatus == "failed" -> {
-                Surface(
-                    color = ChatColors.SurfaceVariant,
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth(0.6f)
-                ) {
-                    Text(
-                        text = "Failed to generate image",
-                        color = ChatColors.Error,
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(16.dp)
-                    )
-                }
-            }
-        }
     }
 }
 
@@ -119,7 +46,7 @@ private fun UserMessage(message: ChatMessage, modifier: Modifier = Modifier) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "You",
-                    tint = androidx.compose.ui.graphics.Color.White,
+                    tint = Color.White,
                     modifier = Modifier.size(16.dp)
                 )
             }
@@ -155,28 +82,18 @@ private fun AssistantMessage(message: ChatMessage, modifier: Modifier = Modifier
             .animateContentSize(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        if (message.characterHeadshotUrl != null) {
-            AsyncImage(
-                model = message.characterHeadshotUrl,
-                contentDescription = message.characterName ?: "Assistant",
-                modifier = Modifier
-                    .size(28.dp)
-                    .clip(CircleShape),
-            )
-        } else {
-            Surface(
-                modifier = Modifier.size(28.dp),
-                shape = CircleShape,
-                color = ChatColors.AssistantAvatarBg
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "AI",
-                        color = androidx.compose.ui.graphics.Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+        Surface(
+            modifier = Modifier.size(28.dp),
+            shape = CircleShape,
+            color = ChatColors.AssistantAvatarBg
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Text(
+                    text = "AI",
+                    color = Color.White,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
 
@@ -184,191 +101,32 @@ private fun AssistantMessage(message: ChatMessage, modifier: Modifier = Modifier
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (message.characterHeadshotUrl != null && message.characterName != null) {
-                    AsyncImage(
-                        model = message.characterHeadshotUrl,
-                        contentDescription = message.characterName,
-                        modifier = Modifier
-                            .size(20.dp)
-                            .clip(CircleShape),
-                    )
-                }
-
-                Text(
-                    text = message.characterName ?: "ChatAI",
-                    color = ChatColors.TextPrimary,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                if (message.modelName != null) {
-                    Surface(
-                        color = ChatColors.SurfaceVariant,
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            text = message.modelName,
-                            color = ChatColors.TextTertiary,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                }
-            }
-
-            when {
-                message.isStreaming && message.content.isEmpty() -> {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = ChatColors.Accent,
-                        strokeWidth = 2.dp
-                    )
-                }
-                else -> {
-                    MarkdownContent(
-                        markdown = message.content,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    if (message.isStreaming) {
-                        Surface(
-                            modifier = Modifier.padding(top = 2.dp).size(6.dp, 18.dp),
-                            color = ChatColors.Accent,
-                            shape = RoundedCornerShape(2.dp)
-                        ) {}
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun GalleryRow(
-    messages: List<ChatMessage>,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.padding(bottom = 8.dp)
-        ) {
-            Surface(
-                modifier = Modifier.size(28.dp),
-                shape = CircleShape,
-                color = ChatColors.AssistantAvatarBg
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = "AI",
-                        color = androidx.compose.ui.graphics.Color.White,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
             Text(
-                text = "ChatAI",
+                text = AiModels.LUNA_MODEL_NAME,
                 color = ChatColors.TextPrimary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
             )
-        }
 
-        LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(start = 60.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(end = 16.dp)
-        ) {
-            items(messages, key = { msg -> "gallery_item_${msg.id}" }) { message ->
-                when {
-                    message.imageStatus == "generating" -> {
-                        Surface(
-                            modifier = Modifier
-                                .width(240.dp)
-                                .height(200.dp)
-                                .clip(RoundedCornerShape(12.dp)),
-                            color = ChatColors.SurfaceVariant
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    CircularProgressIndicator(
-                                        color = ChatColors.Accent,
-                                        strokeWidth = 2.dp,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                    Text(
-                                        text = "Generating...",
-                                        color = ChatColors.TextTertiary,
-                                        fontSize = 12.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    message.imageUrl != null -> {
-                        Box(
-                            modifier = Modifier
-                                .width(240.dp)
-                                .height(200.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                        ) {
-                            AsyncImage(
-                                model = message.imageUrl,
-                                contentDescription = message.content,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(RoundedCornerShape(12.dp)),
-                            )
-                            // Save button overlay
-                            ImageSaveButton(
-                                imageUrl = message.imageUrl,
-                                modifier = Modifier
-                                    .align(Alignment.BottomEnd)
-                                    .padding(6.dp)
-                            )
-                        }
-                    }
-                    message.imageStatus == "failed" -> {
-                        Surface(
-                            modifier = Modifier
-                                .width(180.dp)
-                                .height(180.dp)
-                                .clip(RoundedCornerShape(12.dp)),
-                            color = ChatColors.SurfaceVariant
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Column(
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.BrokenImage,
-                                        contentDescription = null,
-                                        tint = ChatColors.Error,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                    Text(
-                                        text = "Failed",
-                                        color = ChatColors.Error,
-                                        fontSize = 12.sp
-                                    )
-                                }
-                            }
-                        }
-                    }
+            if (message.isStreaming && message.content.isEmpty()) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = ChatColors.Accent,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                MarkdownContent(
+                    markdown = message.content,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (message.isStreaming) {
+                    Surface(
+                        modifier = Modifier
+                            .padding(top = 2.dp)
+                            .size(6.dp, 18.dp),
+                        color = ChatColors.Accent,
+                        shape = MaterialTheme.shapes.small
+                    ) {}
                 }
             }
         }

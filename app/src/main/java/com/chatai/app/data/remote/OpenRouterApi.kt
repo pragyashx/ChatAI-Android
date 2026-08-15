@@ -32,17 +32,16 @@ class OpenRouterApi() {
 
     fun sendMessageStream(
         apiKey: String,
-        model: String,
         messages: List<MessageDto>
     ): Flow<String> = flow {
         val request = ChatRequest(
-            model = model,
+            model = AiModels.LUNA_MODEL_ID,
             messages = messages,
             stream = true
         )
 
         val jsonBody = gson.toJson(request)
-        Log.d(TAG, "Request model: $model, messages: ${messages.size}")
+        Log.d(TAG, "Request model: ${AiModels.LUNA_MODEL_ID}, messages: ${messages.size}")
 
         val requestBody = jsonBody.toRequestBody(jsonMediaType)
 
@@ -92,46 +91,4 @@ class OpenRouterApi() {
         }
     }.flowOn(Dispatchers.IO)
 
-    suspend fun sendNonStreamMessage(
-        apiKey: String,
-        model: String,
-        messages: List<MessageDto>
-    ): String {
-        val request = ChatRequest(
-            model = model,
-            messages = messages,
-            stream = false
-        )
-
-        val jsonBody = gson.toJson(request)
-        val requestBody = jsonBody.toRequestBody(jsonMediaType)
-
-        val httpRequest = Request.Builder()
-            .url(CHAT_ENDPOINT)
-            .post(requestBody)
-            .addHeader("Authorization", "Bearer $apiKey")
-            .addHeader("Content-Type", "application/json")
-            .addHeader("HTTP-Referer", "https://chatai.app")
-            .addHeader("X-Title", "ChatAI Android")
-            .build()
-
-        val response = client.newCall(httpRequest).execute()
-
-        if (!response.isSuccessful) {
-            val errorBody = response.body?.string()
-            throw IOException("API Error: ${response.code} - $errorBody")
-        }
-
-        val responseBody = response.body?.string() ?: throw IOException("Empty response")
-        val fullResponse = gson.fromJson(responseBody, StreamChunk::class.java)
-        return fullResponse.choices?.firstOrNull()?.delta?.content
-            ?: fullResponse.choices?.firstOrNull()?.let {
-                // Try parsing as full response
-                val json = gson.fromJson(responseBody, Map::class.java)
-                val choices = json["choices"] as? List<*>
-                val firstChoice = choices?.firstOrNull() as? Map<*, *>
-                val message = firstChoice?.get("message") as? Map<*, *>
-                message?.get("content") as? String
-            } ?: ""
-    }
 }

@@ -5,13 +5,14 @@ import java.util.UUID
 data class ChatMessage(
     val id: String = UUID.randomUUID().toString(),
     val conversationId: String,
-    val role: String, // "user", "assistant", "image"
+    val role: String, // "user" or "assistant"; "image" is retained for legacy rows
     val content: String,
     val timestamp: Long = System.currentTimeMillis(),
+    // Legacy image fields remain for Room compatibility but are no longer used by the app.
     val imageUrl: String? = null,
     val imageGenerationId: String? = null,
-    val imageStatus: String? = null, // "generating", "completed", "failed"
-    val imageType: String? = null, // "standalone", "headshot", "gallery"
+    val imageStatus: String? = null,
+    val imageType: String? = null,
     val galleryId: String? = null,
     val characterName: String? = null,
     val characterHeadshotUrl: String? = null,

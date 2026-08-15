@@ -28,7 +28,6 @@ jobs:
       - name: Create gradle.properties with secrets
         run: |
           echo "OPENROUTER_API_KEY=${{ secrets.OPENROUTER_API_KEY }}" >> gradle.properties
-          echo "IMAGE_PROXY_URL=${{ secrets.IMAGE_PROXY_URL }}" >> gradle.properties
 
       - name: Decode keystore
         run: |
@@ -55,10 +54,9 @@ jobs:
           tag_name: v1.4.1
           name: ChatAI v1.4.1
           body: |
-            ## v1.4.1 — Proxy Image API + Crash Fix
+            ## v1.4.1 — OpenAI Luna chat
 
-            - **PHP Proxy**: Route image generation through configurable proxy (set `IMAGE_PROXY_URL` secret). Falls back to direct calls if empty.
-            - **Duplicate Key Fix**: Prevented LazyColumn/LazyRow crash from duplicate message IDs.
-            - **Model Persistence**: Selected AI model saved between sessions.
+            - **OpenAI Luna**: Chat requests use `openai/gpt-5.6-luna` through OpenRouter.
+            - **Text-only chat**: Removed model selection and image generation features.
             - **New Signing Key**: New RSA 2048 keystore (JDK 17 compatible).
           files: app/build/outputs/apk/release/*.apk

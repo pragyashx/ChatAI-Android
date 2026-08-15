@@ -1,8 +1,20 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
 }
+
+val localProperties = Properties().apply {
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localPropertiesFile.inputStream().use(::load)
+    }
+}
+
+fun secretProperty(name: String): String =
+    project.findProperty(name)?.toString() ?: localProperties.getProperty(name, "")
 
 android {
     namespace = "com.chatai.app"
@@ -20,8 +32,7 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "OPENROUTER_API_KEY", "\"${project.findProperty("OPENROUTER_API_KEY") ?: ""}\"")
-        buildConfigField("String", "IMAGE_PROXY_URL", "\"${project.findProperty("IMAGE_PROXY_URL") ?: ""}\"")
+        buildConfigField("String", "OPENROUTER_API_KEY", "\"${secretProperty("OPENROUTER_API_KEY")}\"")
     }
 
     signingConfigs {
