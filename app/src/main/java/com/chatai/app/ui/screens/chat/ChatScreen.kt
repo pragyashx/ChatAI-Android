@@ -183,7 +183,7 @@ private fun WelcomeScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "What can I help with?",
+            text = "What can I help you code?",
             color = ChatColors.TextPrimary,
             fontSize = 22.sp,
             fontWeight = FontWeight.SemiBold
@@ -192,10 +192,10 @@ private fun WelcomeScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         val examples = listOf(
-            "Explain quantum computing simply",
-            "Write a Python web scraper",
-            "Help me plan a healthy dinner",
-            "Tell me about Vietnamese culture"
+            "Give me prime number code in Python",
+            "Write binary search in Java",
+            "Create a prime number program in C",
+            "Debug this Kotlin null pointer error"
         )
 
         examples.forEach { example ->

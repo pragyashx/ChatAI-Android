@@ -31,7 +31,7 @@ fun ChatInput(
     isStreaming: Boolean,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    placeholder: String = "Message ChatAI..."
+    placeholder: String = "Ask a coding question..."
 ) {
     val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -125,7 +125,7 @@ fun ChatInput(
 
             // Bottom text
             Text(
-                text = "ChatAI can make mistakes. Consider checking important information.",
+                text = "ChatAI answers coding and software development questions.",
                 color = ChatColors.TextTertiary,
                 fontSize = 11.sp,
                 modifier = Modifier
