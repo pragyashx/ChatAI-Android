@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ChatAI"
+rootProject.name = "Chiti Code"
 include(":app")

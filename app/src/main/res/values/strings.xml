@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ChatAI</string>
+    <string name="app_name">Chiti Code</string>
     <string name="new_chat">New Chat</string>
     <string name="type_message">Type a message...</string>
     <string name="send">Send</string>

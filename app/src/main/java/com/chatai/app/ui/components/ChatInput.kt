@@ -125,7 +125,7 @@ fun ChatInput(
 
             // Bottom text
             Text(
-                text = "ChatAI answers coding and software development questions.",
+                text = "Chiti Code answers coding and software development questions.",
                 color = ChatColors.TextTertiary,
                 fontSize = 11.sp,
                 modifier = Modifier

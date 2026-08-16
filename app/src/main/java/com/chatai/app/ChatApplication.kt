@@ -31,11 +31,11 @@ class ChatApplication : Application() {
             )
 
             // Also log to logcat
-            Log.e("ChatAI", "═══ FATAL CRASH ═══")
-            Log.e("ChatAI", "Thread: ${thread.name}")
+            Log.e("ChitiCode", "═══ FATAL CRASH ═══")
+            Log.e("ChitiCode", "Thread: ${thread.name}")
             val sw = StringWriter()
             throwable.printStackTrace(PrintWriter(sw))
-            Log.e("ChatAI", sw.toString())
+            Log.e("ChitiCode", sw.toString())
 
             // Let the default handler continue (shows system crash dialog)
             defaultHandler?.uncaughtException(thread, throwable)

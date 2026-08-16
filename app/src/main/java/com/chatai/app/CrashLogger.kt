@@ -24,7 +24,7 @@ object CrashLogger {
             if (!dir.exists()) dir.mkdirs()
 
             val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
-            val file = File(dir, "chatai_log_$date.txt")
+            val file = File(dir, "chiticode_log_$date.txt")
 
             val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US).format(Date())
             val sb = StringBuilder()
@@ -71,7 +71,7 @@ object CrashLogger {
 
             val sb = StringBuilder()
             sb.appendLine("══════════════════════════════════════════")
-            sb.appendLine("         CRASH LOG - ChatAI Android")
+            sb.appendLine("         CRASH LOG - Chiti Code Android")
             sb.appendLine("══════════════════════════════════════════")
             sb.appendLine()
             sb.appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL}")

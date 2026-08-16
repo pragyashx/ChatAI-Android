@@ -34,7 +34,7 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 @Composable
-fun ChatAITheme(
+fun ChitiCodeTheme(
     darkTheme: Boolean = true, // Force dark theme like ChatGPT
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit

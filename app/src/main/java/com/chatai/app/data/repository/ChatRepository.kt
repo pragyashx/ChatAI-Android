@@ -20,7 +20,7 @@ class ChatRepository(
     private val conversationDao: ConversationDao = database.conversationDao()
     private val messageDao: MessageDao = database.messageDao()
 
-    val systemPrompt = """You are ChatAI, a coding-focused AI assistant.
+    val systemPrompt = """You are Chiti Code, a coding-focused AI assistant.
 
 Only answer questions about programming and software development. This includes writing code, algorithms, data structures, debugging, code reviews, explanations of programming concepts, APIs, databases, testing, and developer tools.
 

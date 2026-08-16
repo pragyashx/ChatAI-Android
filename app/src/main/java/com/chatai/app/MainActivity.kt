@@ -11,14 +11,14 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.chatai.app.ui.screens.chat.ChatScreen
 import com.chatai.app.ui.screens.conversations.ConversationListViewModel
-import com.chatai.app.ui.theme.ChatAITheme
+import com.chatai.app.ui.theme.ChitiCodeTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ChatAITheme {
+            ChitiCodeTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val convViewModel: ConversationListViewModel = viewModel()
                     val conversations by convViewModel.conversations.collectAsState()

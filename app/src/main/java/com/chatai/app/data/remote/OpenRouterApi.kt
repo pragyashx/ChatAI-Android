@@ -51,7 +51,7 @@ class OpenRouterApi() {
             .addHeader("Authorization", "Bearer $apiKey")
             .addHeader("Content-Type", "application/json")
             .addHeader("HTTP-Referer", "https://chatai.app")
-            .addHeader("X-Title", "ChatAI Android")
+            .addHeader("X-Title", "Chiti Code Android")
             .build()
 
         // Use synchronous streaming for reliable Flow emission

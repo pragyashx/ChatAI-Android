@@ -4,14 +4,45 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- AI text -->
+
+    <!-- Antenna and friendly side modules -->
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M30,65 L30,45 L38,45 L38,65 Z"/>
+        android:fillColor="#FFF7ED"
+        android:pathData="M52,31h4v-10h-4z" />
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M44,65 L44,45 L52,45 L52,55 L58,45 L66,45 L58,57 L66,70 L58,70 L52,59 L52,70 L44,70 Z"/>
+        android:fillColor="#FDE68A"
+        android:pathData="M50,17c0,-2.2 1.8,-4 4,-4s4,1.8 4,4s-1.8,4 -4,4s-4,-1.8 -4,-4z" />
     <path
-        android:fillColor="#FFFFFF"
-        android:pathData="M70,65 L70,45 L78,45 L78,65 Z"/>
+        android:fillColor="#172554"
+        android:pathData="M25,46h7v17h-7c-3.3,0 -6,-2.7 -6,-6v-5c0,-3.3 2.7,-6 6,-6zM83,46h-7v17h7c3.3,0 6,-2.7 6,-6v-5c0,-3.3 -2.7,-6 -6,-6z" />
+    <path
+        android:fillColor="#FCA5A5"
+        android:pathData="M25,51h5v7h-5c-1.1,0 -2,-0.9 -2,-2v-3c0,-1.1 0.9,-2 2,-2zM83,51h-5v7h5c1.1,0 2,-0.9 2,-2v-3c0,-1.1 -0.9,-2 -2,-2z" />
+
+    <!-- Rounded mascot head with a dark dimensional rim -->
+    <path
+        android:fillColor="#172554"
+        android:pathData="M43,29h22c10,0 18,8 18,18v13c0,10 -8,18 -18,18H43c-10,0 -18,-8 -18,-18V47c0,-10 8,-18 18,-18z" />
+    <path
+        android:fillColor="#FFF7ED"
+        android:pathData="M44,34h20c7.2,0 13,5.8 13,13v12c0,7.2 -5.8,13 -13,13H44c-7.2,0 -13,-5.8 -13,-13V47c0,-7.2 5.8,-13 13,-13z" />
+
+    <!-- Expressive eyes -->
+    <path
+        android:fillColor="#1E293B"
+        android:pathData="M37,48c0,-2.8 2.2,-5 5,-5h2c2.8,0 5,2.2 5,5v3c0,2.8 -2.2,5 -5,5h-2c-2.8,0 -5,-2.2 -5,-5zM59,48c0,-2.8 2.2,-5 5,-5h2c2.8,0 5,2.2 5,5v3c0,2.8 -2.2,5 -5,5h-2c-2.8,0 -5,-2.2 -5,-5z" />
+    <path
+        android:fillColor="#BAE6FD"
+        android:pathData="M40,47c0,-1.1 0.9,-2 2,-2h1c1.1,0 2,0.9 2,2s-0.9,2 -2,2h-1c-1.1,0 -2,-0.9 -2,-2zM62,47c0,-1.1 0.9,-2 2,-2h1c1.1,0 2,0.9 2,2s-0.9,2 -2,2h-1c-1.1,0 -2,-0.9 -2,-2z" />
+
+    <!-- Nose, cheeks, and a small smile -->
+    <path
+        android:fillColor="#FB7185"
+        android:pathData="M52,55h4v4h-4z" />
+    <path
+        android:fillColor="#FDA4AF"
+        android:pathData="M33,59c0,-2 1.6,-3.5 3.5,-3.5S40,57 40,59s-1.6,3.5 -3.5,3.5S33,61 33,59zM68,59c0,-2 1.6,-3.5 3.5,-3.5S75,57 75,59s-1.6,3.5 -3.5,3.5S68,61 68,59z" />
+    <path
+        android:fillColor="#172554"
+        android:pathData="M43,62c2,4 5,6 11,6s9,-2 11,-6h-4c-1,2 -3,3 -7,3s-6,-1 -7,-3z" />
 </vector>

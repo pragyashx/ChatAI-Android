@@ -1,5 +1,6 @@
 package com.chatai.app.ui.screens.chat
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,12 +14,15 @@ import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.res.painterResource
+import com.chatai.app.R
 import com.chatai.app.data.remote.AiModels
 import com.chatai.app.domain.model.Conversation
 import com.chatai.app.ui.components.ChatInput
@@ -166,16 +170,29 @@ private fun WelcomeScreen(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Surface(
-            modifier = Modifier.size(48.dp),
+            modifier = Modifier.size(56.dp),
             shape = CircleShape,
-            color = ChatColors.Accent
+            color = Color.Transparent,
+            shadowElevation = 6.dp
         ) {
-            Box(contentAlignment = Alignment.Center) {
-                Text(
-                    text = "AI",
-                    color = ChatColors.TextOnAccent,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(
+                                Color(0xFF6D5DFB),
+                                Color(0xFF0F766E)
+                            )
+                        ),
+                        shape = CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.ic_launcher_foreground),
+                    contentDescription = "Robot",
+                    modifier = Modifier.size(48.dp)
                 )
             }
         }
