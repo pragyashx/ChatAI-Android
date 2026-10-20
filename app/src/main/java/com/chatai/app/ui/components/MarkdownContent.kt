@@ -33,7 +33,8 @@ fun MarkdownContent(
                 setLineSpacing(4f, 1f)
                 movementMethod = LinkMovementMethod.getInstance()
                 setLinkTextColor(android.graphics.Color.parseColor("#10A37F"))
-                setOnClickListener { }
+                setTextIsSelectable(true)
+                isLongClickable = true
             }
         },
         modifier = modifier.fillMaxWidth(),

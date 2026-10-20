@@ -149,6 +149,7 @@ fun ChatScreen(
                 }
 
                 ChatInput(
+                    modifier = Modifier.imePadding(),
                     message = currentInput,
                     onMessageChange = {
                         currentInput = it.take(DailyUsagePolicy.MAX_INPUT_CHARACTERS)
