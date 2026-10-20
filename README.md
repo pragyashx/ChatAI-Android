@@ -1,6 +1,6 @@
 # Chiti Code
 
-Chiti Code is an Android AI assistant designed for programming and software-development conversations. It uses OpenRouter to provide streaming responses from an AI model and stores conversations locally for easy access later.
+Chiti Code is an Android AI programming assistant and code-verification lab. It uses OpenRouter for streaming chat and AI-generated test cases, Judge0 for sandboxed code execution, and Room for local history.
 
 ## Features
 
@@ -10,6 +10,14 @@ Chiti Code is an Android AI assistant designed for programming and software-deve
 - Automatic conversation titles
 - Local message persistence with Room
 - Markdown, code, tables, links, and image rendering
+- Code playground with standard input and execution output
+- Python, Java, C, C++, JavaScript, and Kotlin execution
+- AI-generated normal, boundary, and edge test cases
+- Verified/Failed results based on real sandbox execution
+- First failing counterexample with expected and actual output
+- Recent code-attempt history stored locally
+- Shared limit of 10 AI operations per calendar day
+- 8,000-character limit for chat messages and playground source code
 - Jetpack Compose and Material 3 user interface
 - Support for Android 8.0 and newer
 
@@ -23,6 +31,8 @@ Chiti Code is an Android AI assistant designed for programming and software-deve
 - OkHttp and Server-Sent Events
 - Kotlin Coroutines
 - OpenRouter API
+- Judge0 CE API
+- DataStore Preferences
 - Gradle 8.5
 
 ## Requirements
@@ -45,6 +55,20 @@ Chiti Code is an Android AI assistant designed for programming and software-deve
 
 Do not commit `local.properties` or expose your API key in source control.
 
+Judge0 CE does not require an API key. The public service is appropriate for a classroom demonstration but does not provide a production availability guarantee.
+
+## Verification Lab
+
+1. Open the app and tap the code icon in the chat header.
+2. Select a programming language.
+3. Describe what the program should do.
+4. Enter source code and optional standard input.
+5. Tap **Run once** to execute the code without using the AI allowance.
+6. Tap **Generate & verify** to create five AI test cases and execute them in Judge0.
+7. Review the verification badge, per-test results, and first failing counterexample.
+
+Chat requests and AI test generation share a per-device allowance of 10 operations per calendar day. The allowance resets automatically according to the device's local date. Direct Judge0 sandbox runs do not consume it.
+
 ## Build and Run
 
 On Windows PowerShell:
@@ -62,6 +86,15 @@ On macOS or Linux:
 ```
 
 `installDebug` requires a connected Android device or running emulator.
+
+Run the local quality checks with:
+
+```powershell
+.\gradlew.bat testDebugUnitTest
+.\gradlew.bat lintDebug
+```
+
+The generated APK is located at `app/build/outputs/apk/debug/app-debug.apk`.
 
 ## Project Details
 

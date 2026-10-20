@@ -10,7 +10,24 @@ data class ChatRequest(
 
 data class MessageDto(
     val role: String,
-    val content: String
+    val content: Any
+)
+
+data class ContentPartDto(
+    val type: String,
+    val text: String? = null,
+    @SerializedName("image_url") val imageUrl: ImageUrlDto? = null,
+    val file: FilePartDto? = null
+)
+
+data class ImageUrlDto(
+    val url: String
+)
+
+data class FilePartDto(
+    val filename: String,
+    @SerializedName("file_data") val fileData: String,
+    @SerializedName("mime_type") val mimeType: String
 )
 
 data class StreamChunk(

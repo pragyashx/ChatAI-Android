@@ -1,30 +1,45 @@
 package com.chatai.app.ui.screens.chat
 
 import android.app.Application
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.chatai.app.BuildConfig
 import com.chatai.app.ChatApplication
 import com.chatai.app.CrashLogger
+import com.chatai.app.data.attachments.AttachmentError
+import com.chatai.app.data.local.preferences.DailyUsage
+import com.chatai.app.data.local.preferences.DailyUsagePolicy
 import com.chatai.app.data.remote.AiModels
+import com.chatai.app.domain.model.AttachmentType
+import com.chatai.app.domain.model.AttachmentStatus
+import com.chatai.app.domain.model.ChatAttachment
 import com.chatai.app.data.repository.ChatRepository
 import com.chatai.app.data.repository.StreamEvent
 import com.chatai.app.domain.model.ChatMessage
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     companion object {
         private const val TAG = "ChatViewModel"
+        private const val MESSAGE_GENERIC_ERROR = "Something went wrong. Please try again."
+        private const val MESSAGE_NETWORK_ERROR = "Connection error. Please check your internet and try again."
+        private const val MESSAGE_UNSUPPORTED_ATTACHMENT =
+            "This chat model currently supports image attachments only (JPG, JPEG, PNG)."
     }
 
     private val appContext: Application get() = getApplication()
-    private val repository: ChatRepository =
-        (application as ChatApplication).container.repository
+    private val container = (application as ChatApplication).container
+    private val repository: ChatRepository = container.repository
+    private val attachmentRepository = container.attachmentRepository
+    private val usageLimitRepository = container.usageLimitRepository
     private val apiKey = BuildConfig.OPENROUTER_API_KEY
 
     private val _currentConversationId = MutableStateFlow<String?>(null)
@@ -42,6 +57,18 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     private val _streamingMessageId = MutableStateFlow<String?>(null)
     val streamingMessageId: StateFlow<String?> = _streamingMessageId
 
+    private val _pendingAttachments = MutableStateFlow<List<ChatAttachment>>(emptyList())
+    val pendingAttachments: StateFlow<List<ChatAttachment>> = _pendingAttachments
+
+    private val _isProcessingAttachment = MutableStateFlow(false)
+    val isProcessingAttachment: StateFlow<Boolean> = _isProcessingAttachment
+
+    val dailyUsage: StateFlow<DailyUsage> = usageLimitRepository.usage.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        DailyUsage(used = 0)
+    )
+
     private var chatHistory = mutableListOf<ChatMessage>()
 
     // Catch uncaught coroutine failures so a network error is visible to the user.
@@ -53,7 +80,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             message = "Uncaught coroutine exception: ${throwable.message}",
             throwable = throwable
         )
-        _error.value = "Lỗi hệ thống: ${throwable.message}"
+        _error.value = normalizeErrorMessage(throwable.message)
         _isLoading.value = false
     }
 
@@ -64,10 +91,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 _currentConversationId.value = conversation.id
                 chatHistory.clear()
                 _messages.value = emptyList()
+                _pendingAttachments.value = emptyList()
                 loadMessages(conversation.id)
             } catch (e: Exception) {
                 CrashLogger.log(appContext, TAG, "startNewChat failed", e)
-                _error.value = "Không thể tạo cuộc trò chuyện mới"
+                _error.value = "Could not start a new chat. Please try again."
             }
         }
     }
@@ -76,6 +104,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
         if (conversationId == _currentConversationId.value) return
         _currentConversationId.value = conversationId
         chatHistory.clear()
+        _pendingAttachments.value = emptyList()
         loadMessages(conversationId)
     }
 
@@ -96,7 +125,22 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun sendMessage(content: String) {
-        if (content.isBlank()) return
+        val attachments = _pendingAttachments.value
+        if (content.isBlank() && attachments.isEmpty()) return
+        if (_isLoading.value) return
+        if (_isProcessingAttachment.value) return
+        if (content.length > DailyUsagePolicy.MAX_INPUT_CHARACTERS) {
+            _error.value = "Messages are limited to ${DailyUsagePolicy.MAX_INPUT_CHARACTERS} characters"
+            return
+        }
+        if (attachments.any { it.status != AttachmentStatus.READY }) {
+            _error.value = "Please wait for attachment processing to finish"
+            return
+        }
+        if (attachments.any { it.type !in setOf(AttachmentType.JPG, AttachmentType.JPEG, AttachmentType.PNG) }) {
+            _error.value = MESSAGE_UNSUPPORTED_ATTACHMENT
+            return
+        }
         if (apiKey.isBlank()) {
             _error.value = "Please set API key"
             return
@@ -109,19 +153,27 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     val conversation = repository.createConversation()
                     _currentConversationId.value = conversation.id
                     loadMessages(conversation.id)
-                    sendMessageToApi(conversation.id, content)
+                    sendMessageToApi(conversation.id, content, attachments)
                 } else {
-                    sendMessageToApi(conversationId, content)
+                    sendMessageToApi(conversationId, content, attachments)
                 }
             } catch (e: Exception) {
                 CrashLogger.log(appContext, TAG, "sendMessage failed", e)
-                _error.value = "Không thể gửi tin nhắn: ${e.message}"
+                _error.value = "Unable to send message. Please try again."
                 _isLoading.value = false
             }
         }
     }
 
-    private suspend fun sendMessageToApi(conversationId: String, content: String) {
+    private suspend fun sendMessageToApi(
+        conversationId: String,
+        content: String,
+        attachments: List<ChatAttachment>
+    ) {
+        if (!usageLimitRepository.tryConsume()) {
+            _error.value = "Daily AI limit reached. Your 10 requests reset tomorrow."
+            return
+        }
         _isLoading.value = true
         _error.value = null
 
@@ -130,9 +182,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 apiKey = apiKey,
                 conversationId = conversationId,
                 messages = chatHistory.filter {
-                    it.content.isNotBlank() && (it.role == "user" || it.role == "assistant")
+                    (it.content.isNotBlank() || it.attachments.isNotEmpty()) &&
+                        (it.role == "user" || it.role == "assistant")
                 },
-                userMessage = content
+                userMessage = content,
+                attachments = attachments
             ).collect { event ->
                 when (event) {
                     is StreamEvent.UserMessageSaved -> Unit
@@ -164,7 +218,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                                 conversationId = conversationId,
                                 role = "user",
                                 content = content,
-                                modelName = AiModels.LUNA_MODEL_NAME
+                                modelName = AiModels.LUNA_MODEL_NAME,
+                                attachments = attachments
                             )
                         )
                         chatHistory.add(
@@ -179,17 +234,48 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     is StreamEvent.StreamError -> {
                         _streamingMessageId.value = null
                         _isLoading.value = false
-                        _error.value = event.error
+                        _error.value = normalizeErrorMessage(event.error)
                         CrashLogger.log(appContext, TAG, "Stream error", Exception(event.error))
                     }
                 }
             }
+            _pendingAttachments.value = emptyList()
         } catch (e: Exception) {
             _streamingMessageId.value = null
             _isLoading.value = false
             CrashLogger.log(appContext, TAG, "sendMessageToApi failed", e)
-            _error.value = "Lỗi kết nối: ${e.message}"
+            _error.value = when (e) {
+                is AttachmentError -> e.message ?: MESSAGE_GENERIC_ERROR
+                else -> normalizeErrorMessage(e.message)
+            }
         }
+    }
+
+    fun addAttachment(uri: Uri) {
+        if (_isLoading.value) return
+        viewModelScope.launch(exceptionHandler) {
+            _isProcessingAttachment.value = true
+            _error.value = null
+            try {
+                val attachment = attachmentRepository.prepareAttachment(uri)
+                _pendingAttachments.value = listOf(attachment)
+            } catch (error: Exception) {
+                _error.value = when (error) {
+                    is AttachmentError -> error.message
+                    else -> "Attachment processing failed"
+                }
+            } finally {
+                _isProcessingAttachment.value = false
+            }
+        }
+    }
+
+    fun removeAttachment(attachmentId: String) {
+        _pendingAttachments.value = _pendingAttachments.value.filterNot { it.id == attachmentId }
+    }
+
+    fun clearAttachments() {
+        _pendingAttachments.value = emptyList()
     }
 
     fun deleteConversation(id: String) {
@@ -209,6 +295,30 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     fun clearError() {
         _error.value = null
+    }
+
+    private fun normalizeErrorMessage(raw: String?): String {
+        val message = raw?.trim().orEmpty()
+        if (message.isBlank()) return MESSAGE_GENERIC_ERROR
+
+        val lower = message.lowercase()
+        return when {
+            "401" in lower || "unauthorized" in lower || "invalid api key" in lower ->
+                "Invalid API key. Please update your key and try again."
+
+            "429" in lower || "rate limit" in lower || "too many requests" in lower ->
+                "Rate limit reached. Please wait a moment and try again."
+
+            "timeout" in lower || "failed to connect" in lower || "network" in lower ||
+                "unable to resolve host" in lower || "connection" in lower ->
+                MESSAGE_NETWORK_ERROR
+
+            "attachment" in lower || "file" in lower || "unsupported" in lower ||
+                "image_url" in lower || "content part" in lower ->
+                MESSAGE_UNSUPPORTED_ATTACHMENT
+
+            else -> MESSAGE_GENERIC_ERROR
+        }
     }
 
     override fun onCleared() {

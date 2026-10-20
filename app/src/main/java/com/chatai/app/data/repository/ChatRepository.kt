@@ -7,7 +7,12 @@ import com.chatai.app.data.local.entity.ConversationEntity
 import com.chatai.app.data.local.entity.MessageEntity
 import com.chatai.app.data.remote.AiModels
 import com.chatai.app.data.remote.OpenRouterApi
+import com.chatai.app.data.remote.dto.ContentPartDto
+import com.chatai.app.data.remote.dto.FilePartDto
+import com.chatai.app.data.remote.dto.ImageUrlDto
 import com.chatai.app.data.remote.dto.MessageDto
+import com.chatai.app.domain.model.AttachmentType
+import com.chatai.app.domain.model.ChatAttachment
 import com.chatai.app.domain.model.ChatMessage
 import com.chatai.app.domain.model.Conversation
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +20,8 @@ import kotlinx.coroutines.flow.*
 
 class ChatRepository(
     private val database: ChatDatabase,
-    private val api: OpenRouterApi
+    private val api: OpenRouterApi,
+    private val attachmentRepository: AttachmentRepository
 ) {
     private val conversationDao: ConversationDao = database.conversationDao()
     private val messageDao: MessageDao = database.messageDao()
@@ -68,14 +74,16 @@ If the user asks about a non-coding topic, do not answer that topic. Give a brie
         apiKey: String,
         conversationId: String,
         messages: List<ChatMessage>,
-        userMessage: String
+        userMessage: String,
+        attachments: List<ChatAttachment> = emptyList()
     ): Flow<StreamEvent> = flow {
         // Save user message
         val userMsg = ChatMessage(
             conversationId = conversationId,
             role = "user",
             content = userMessage,
-            modelName = AiModels.LUNA_MODEL_NAME
+            modelName = AiModels.LUNA_MODEL_NAME,
+            attachments = attachments
         )
         saveMessage(userMsg)
         emit(StreamEvent.UserMessageSaved(userMsg))
@@ -112,7 +120,15 @@ If the user asks about a non-coding topic, do not answer that topic. Give a brie
             val role = if (msg.role == "assistant") "assistant" else "user"
             apiMessages.add(MessageDto(role = role, content = msg.content))
         }
-        apiMessages.add(MessageDto(role = "user", content = userMessage))
+        apiMessages.add(
+            MessageDto(
+                role = "user",
+                content = buildUserContent(
+                    text = userMessage,
+                    attachments = attachments
+                )
+            )
+        )
 
         var fullContent = ""
         try {
@@ -137,6 +153,43 @@ If the user asks about a non-coding topic, do not answer that topic. Give a brie
             }
         }
     }.flowOn(Dispatchers.IO)
+
+    private suspend fun buildUserContent(
+        text: String,
+        attachments: List<ChatAttachment>
+    ): Any {
+        if (attachments.isEmpty()) {
+            return text
+        }
+        val contentParts = mutableListOf<ContentPartDto>()
+        val safeText = text.ifBlank { "Please analyze the attached file." }
+        contentParts += ContentPartDto(type = "text", text = safeText)
+
+        for (attachment in attachments) {
+            val base64Data = attachmentRepository.readBase64Data(attachment)
+            val part = when (attachment.type) {
+                AttachmentType.JPG,
+                AttachmentType.JPEG,
+                AttachmentType.PNG -> ContentPartDto(
+                    type = "image_url",
+                    imageUrl = ImageUrlDto(
+                        url = "data:${attachment.mimeType};base64,$base64Data"
+                    )
+                )
+
+                else -> ContentPartDto(
+                    type = "file",
+                    file = FilePartDto(
+                        filename = attachment.displayName,
+                        fileData = base64Data,
+                        mimeType = attachment.mimeType
+                    )
+                )
+            }
+            contentParts += part
+        }
+        return contentParts
+    }
 }
 
 sealed class StreamEvent {

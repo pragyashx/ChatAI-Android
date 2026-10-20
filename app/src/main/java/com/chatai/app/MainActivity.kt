@@ -9,8 +9,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.chatai.app.ui.screens.chat.ChatScreen
 import com.chatai.app.ui.screens.conversations.ConversationListViewModel
+import com.chatai.app.ui.screens.playground.CodePlaygroundScreen
 import com.chatai.app.ui.theme.ChitiCodeTheme
 
 class MainActivity : ComponentActivity() {
@@ -22,13 +26,24 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     val convViewModel: ConversationListViewModel = viewModel()
                     val conversations by convViewModel.conversations.collectAsState()
+                    val navController = rememberNavController()
 
-                    ChatScreen(
-                        conversations = conversations,
-                        onNewChat = { },
-                        onDeleteConversation = { },
-                        onSelectConversation = { }
-                    )
+                    NavHost(navController = navController, startDestination = "chat") {
+                        composable("chat") {
+                            ChatScreen(
+                                conversations = conversations,
+                                onNewChat = { },
+                                onDeleteConversation = { },
+                                onSelectConversation = { },
+                                onOpenPlayground = {
+                                    navController.navigate("playground") { launchSingleTop = true }
+                                }
+                            )
+                        }
+                        composable("playground") {
+                            CodePlaygroundScreen(onBack = { navController.popBackStack() })
+                        }
+                    }
                 }
             }
         }

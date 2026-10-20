@@ -17,5 +17,6 @@ data class ChatMessage(
     val characterName: String? = null,
     val characterHeadshotUrl: String? = null,
     val isStreaming: Boolean = false,
-    val modelName: String? = null
+    val modelName: String? = null,
+    val attachments: List<ChatAttachment> = emptyList()
 )

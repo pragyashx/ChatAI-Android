@@ -60,7 +60,7 @@ class OpenRouterApi() {
         if (!response.isSuccessful) {
             val errorBody = response.body?.string()
             Log.e(TAG, "API Error ${response.code}: $errorBody")
-            throw IOException("API Error: ${response.code} - $errorBody")
+            throw IOException(mapApiErrorMessage(response.code, errorBody))
         }
 
         val reader = response.body?.byteStream()?.bufferedReader()
@@ -90,5 +90,29 @@ class OpenRouterApi() {
             }
         }
     }.flowOn(Dispatchers.IO)
+
+    private fun mapApiErrorMessage(statusCode: Int, errorBody: String?): String {
+        val parsedMessage = runCatching {
+            gson.fromJson(errorBody, ErrorResponse::class.java)?.error?.message
+        }.getOrNull().orEmpty()
+        val combined = "$parsedMessage ${errorBody.orEmpty()}".lowercase()
+
+        return when {
+            statusCode == 401 || "unauthorized" in combined || "invalid api key" in combined ->
+                "Invalid API key. Please update your key and try again."
+
+            statusCode == 429 || "rate limit" in combined || "too many requests" in combined ->
+                "Rate limit reached. Please wait a moment and try again."
+
+            "unsupported" in combined || "file" in combined || "attachment" in combined ||
+                "image_url" in combined || "content part" in combined ->
+                "This chat model currently supports image attachments only (JPG, JPEG, PNG)."
+
+            statusCode in 500..599 ->
+                "AI service is temporarily unavailable. Please try again shortly."
+
+            else -> "Unable to process your request right now. Please try again."
+        }
+    }
 
 }

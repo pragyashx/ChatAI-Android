@@ -16,6 +16,9 @@ val localProperties = Properties().apply {
 fun secretProperty(name: String): String =
     project.findProperty(name)?.toString() ?: localProperties.getProperty(name, "")
 
+fun signingProperty(name: String): String =
+    System.getenv(name)?.takeIf { it.isNotBlank() } ?: secretProperty(name)
+
 android {
     namespace = "com.chatai.app"
     compileSdk = 34
@@ -37,12 +40,12 @@ android {
 
     signingConfigs {
         create("release") {
-            val keystorePath = System.getenv("KEYSTORE_PATH")
-            if (keystorePath != null) {
+            val keystorePath = signingProperty("KEYSTORE_PATH")
+            if (keystorePath.isNotBlank()) {
                 storeFile = file(keystorePath)
-                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: ""
-                keyAlias = System.getenv("KEY_ALIAS") ?: ""
-                keyPassword = System.getenv("KEY_PASSWORD") ?: ""
+                storePassword = signingProperty("KEYSTORE_PASSWORD")
+                keyAlias = signingProperty("KEY_ALIAS")
+                keyPassword = signingProperty("KEY_PASSWORD")
             }
         }
     }
@@ -52,8 +55,8 @@ android {
             isMinifyEnabled = false
         }
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -84,6 +87,35 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+}
+
+val validateReleaseSigning = tasks.register("validateReleaseSigning") {
+    doLast {
+        val requiredSigningProperties = listOf(
+            "KEYSTORE_PATH",
+            "KEYSTORE_PASSWORD",
+            "KEY_ALIAS",
+            "KEY_PASSWORD"
+        )
+        val missingProperties = requiredSigningProperties.filter { signingProperty(it).isBlank() }
+        if (missingProperties.isNotEmpty()) {
+            throw GradleException(
+                "Release signing is not configured. Set ${missingProperties.joinToString()} " +
+                    "in the environment or local.properties."
+            )
+        }
+
+        val keystore = file(signingProperty("KEYSTORE_PATH"))
+        if (!keystore.isFile) {
+            throw GradleException("Release signing keystore was not found: ${keystore.absolutePath}")
+        }
+    }
+}
+
+tasks.configureEach {
+    if (name == "packageRelease") {
+        dependsOn(validateReleaseSigning)
     }
 }
 
@@ -140,4 +172,7 @@ dependencies {
 
     // DataStore (Preferences)
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }

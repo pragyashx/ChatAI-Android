@@ -2,7 +2,10 @@ package com.chatai.app.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.chatai.app.domain.model.ChatAttachment
 import com.chatai.app.domain.model.ChatMessage
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 @Entity(tableName = "messages")
 data class MessageEntity(
@@ -18,7 +21,8 @@ data class MessageEntity(
     val galleryId: String? = null,
     val characterName: String? = null,
     val characterHeadshotUrl: String? = null,
-    val modelName: String? = null
+    val modelName: String? = null,
+    val attachmentsJson: String? = null
 ) {
     fun toDomainModel(): ChatMessage = ChatMessage(
         id = id,
@@ -33,10 +37,14 @@ data class MessageEntity(
         galleryId = galleryId,
         characterName = characterName,
         characterHeadshotUrl = characterHeadshotUrl,
-        modelName = modelName
+        modelName = modelName,
+        attachments = parseAttachmentsJson(attachmentsJson)
     )
 
     companion object {
+        private val gson = Gson()
+        private val attachmentListType = object : TypeToken<List<ChatAttachment>>() {}.type
+
         fun fromDomainModel(message: ChatMessage): MessageEntity = MessageEntity(
             id = message.id,
             conversationId = message.conversationId,
@@ -50,7 +58,20 @@ data class MessageEntity(
             galleryId = message.galleryId,
             characterName = message.characterName,
             characterHeadshotUrl = message.characterHeadshotUrl,
-            modelName = message.modelName
+            modelName = message.modelName,
+            attachmentsJson = attachmentsToJson(message.attachments)
         )
+
+        private fun attachmentsToJson(attachments: List<ChatAttachment>): String? {
+            if (attachments.isEmpty()) return null
+            return gson.toJson(attachments)
+        }
+
+        private fun parseAttachmentsJson(value: String?): List<ChatAttachment> {
+            if (value.isNullOrBlank()) return emptyList()
+            return runCatching {
+                gson.fromJson<List<ChatAttachment>>(value, attachmentListType).orEmpty()
+            }.getOrDefault(emptyList())
+        }
     }
 }
